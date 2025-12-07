@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         Twitch Spam Filter DE
-// @namespace    https://github.com/Twitch-Spam-Filter
+// @namespace    https://github.com/Runkel79/advanced-twitch-spam-filter
 // @version      1.24
 // @description  Erweiterter Twitch-Chat-Spamfilter mit Debug-Overlay, Whitelist und „Antworten ignorieren“.
 // @match        https://www.twitch.tv/*
