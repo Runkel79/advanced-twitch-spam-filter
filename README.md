@@ -6,7 +6,7 @@ An advanced spam filter for Twitch chats with debug overlay, whitelist, and "Ign
 
 **NO SUPPORT PROVIDED**: I do not offer any support for this script. I cannot program and created this script purely out of curiosity using Cursor's AI assistance. Use it at your own risk. If you encounter issues, you'll need to figure them out yourself or modify the code as needed.
 
-**MODIFICATION ENCOURAGED**: Not only do I allow everyone to modify this script to their heart's content, I actively encourage anyone who is interested to do so! Feel free to improve it, customize it, or use it as a learning resource. Share your improvements if you'd like, but there's no obligation to do so.
+**MODIFICATION ENCOURAGED**: Not only do I allow everyone to modify this script to their heart's content, I actively encourage anyone who is interested to do so! Feel free to improve it, customize it, or use it as a learning resource.
 
 ## Versions
 
