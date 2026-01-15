@@ -1,5 +1,7 @@
 # Twitch Spam Filter
 
+Looks like Twitch changed something, the script is currently not working.
+
 An advanced spam filter for Twitch chats with debug overlay, whitelist, and "Ignore Replies" functionality.
 
 ## ⚠️ Important Notice
