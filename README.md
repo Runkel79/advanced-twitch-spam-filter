@@ -1,4 +1,4 @@
-# Twitch Spam Filter (Currently NOT working)
+# Twitch Spam Filter (Should be fixed)
 
 Looks like Twitch changed something, the script is currently not working.
 
