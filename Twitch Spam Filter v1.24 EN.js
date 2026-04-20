@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Spam Filter EN
 // @namespace    https://github.com/Runkel79/advanced-twitch-spam-filter
-// @version      1.24
+// @version      1.25
 // @description  Advanced Twitch chat spam filter with debug overlay, whitelist, and Ignore Replies.
 // @match        https://www.twitch.tv/*
 // @grant        none
@@ -325,7 +325,7 @@ IMPORTANT SETTINGS:
                     <div style="font-size:10px;color:#aaa">
                         <span id="tsf-counter-total">0</span> messages processed
                     </div>
-                    <div style="font-size:11px;opacity:0.9">v1.24</div>
+                    <div style="font-size:11px;opacity:0.9">v1.25</div>
                 </div>
             </div>
             <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">
@@ -466,19 +466,31 @@ IMPORTANT SETTINGS:
     // Try to get the message-only container (without username/badges)
     function getMessageContainer(node) {
         if (!node || !node.querySelector) return node;
-        return node.querySelector('.message, [data-test-selector="message"]') || node;
+        return node.querySelector(
+            '.message, [data-test-selector="message"], [data-a-target="chat-message-text"], [data-test-selector="chat-line-message-body"]'
+        ) || node;
     }
 
     // Try to read login from node
     function getUserLoginFromNode(node) {
         if (!node) return null;
-        let el = node.querySelector && (node.querySelector('[data-a-user]') || node.querySelector('[data-user]'));
+        let el = node.querySelector && (
+            node.querySelector('[data-a-user]') ||
+            node.querySelector('[data-user]') ||
+            node.querySelector('[data-user-login]') ||
+            node.querySelector('[data-login]')
+        );
         if (el) {
-            const v = el.getAttribute('data-a-user') || el.getAttribute('data-user');
+            const v = el.getAttribute('data-a-user') || el.getAttribute('data-user') || el.getAttribute('data-user-login') || el.getAttribute('data-login');
             if (v) return v.toLowerCase();
         }
         // fallback: display name
-        const nameEl = node.querySelector && (node.querySelector('.chat-author__display-name') || node.querySelector('.chat-line__username') || node.querySelector('[data-test-selector="chat-message-username"]'));
+        const nameEl = node.querySelector && (
+            node.querySelector('.chat-author__display-name') ||
+            node.querySelector('.chat-line__username') ||
+            node.querySelector('[data-test-selector="chat-message-username"]') ||
+            node.querySelector('[data-a-target="chat-message-username"]')
+        );
         if (nameEl) return safeText(nameEl).toLowerCase();
         return null;
     }
@@ -942,9 +954,18 @@ IMPORTANT SETTINGS:
     }
 
     function handleChatNode(msgNode) {
-        const root = (msgNode.closest && (msgNode.closest('.chat-line__message-container') || msgNode.closest('[data-test-selector="chat-line"]') || msgNode.closest('.chat-line__message') || msgNode.closest('.chat-line__message-wrapper'))) || msgNode;
+        const root = (msgNode.closest && (
+            msgNode.closest('.chat-line__message-container') ||
+            msgNode.closest('[data-test-selector="chat-line"]') ||
+            msgNode.closest('.chat-line__message') ||
+            msgNode.closest('.chat-line__message-wrapper') ||
+            msgNode.closest('[data-a-target="chat-line-message"]') ||
+            msgNode.closest('[data-test-selector="chat-line-message"]')
+        )) || msgNode;
         // find user and message (best-effort)
-        const userEl = root.querySelector('.chat-author__display-name, .chat-line__username, [data-test-selector="chat-message-username"]') || root.querySelector('[data-a-user]') || null;
+        const userEl = root.querySelector(
+            '.chat-author__display-name, .chat-line__username, [data-test-selector="chat-message-username"], [data-a-target="chat-message-username"]'
+        ) || root.querySelector('[data-a-user], [data-user], [data-user-login], [data-login]') || null;
         const msgEl = getMessageContainer(root);
         if (!userEl || !msgEl) return;
 
@@ -1017,7 +1038,25 @@ IMPORTANT SETTINGS:
                     for (let node of mut.addedNodes) {
                         if (!(node instanceof HTMLElement)) continue;
                         // robust: node itself might be a chat line or wrapper
-                        const msgNode = (node.matches && (node.matches('.chat-line__message') || node.matches('.chat-line__message-wrapper') || node.matches('[data-test-selector="chat-line"]'))) ? node : (node.querySelector && (node.querySelector('.chat-line__message') || node.querySelector('.text-fragment') || node.querySelector('[data-a-user]'))) ? node : null;
+                        const msgNode = (node.matches && (
+                            node.matches('.chat-line__message') ||
+                            node.matches('.chat-line__message-wrapper') ||
+                            node.matches('[data-test-selector="chat-line"]') ||
+                            node.matches('[data-a-target="chat-line-message"]') ||
+                            node.matches('[data-test-selector="chat-line-message"]')
+                        ))
+                            ? node
+                            : (node.querySelector && (
+                                node.querySelector('.chat-line__message') ||
+                                node.querySelector('.text-fragment') ||
+                                node.querySelector('[data-a-user]') ||
+                                node.querySelector('[data-user]') ||
+                                node.querySelector('[data-user-login]') ||
+                                node.querySelector('[data-a-target="chat-message-username"]') ||
+                                node.querySelector('[data-a-target="chat-message-text"]')
+                            ))
+                                ? node
+                                : null;
                         if (!msgNode) continue;
                         pendingMsgNodes.push({ node: msgNode });
                     }
@@ -1038,7 +1077,7 @@ IMPORTANT SETTINGS:
      * Startup
      *********************/
     function startup() {
-        dbg.addLog('Starting Twitch Spam Filter v1.24...');
+        dbg.addLog('Starting Twitch Spam Filter v1.25...');
         observeChat();
     }
 

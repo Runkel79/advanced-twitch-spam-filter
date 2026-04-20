@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Spam Filter DE
 // @namespace    https://github.com/Runkel79/advanced-twitch-spam-filter
-// @version      1.24
+// @version      1.25
 // @description  Erweiterter Twitch-Chat-Spamfilter mit Debug-Overlay, Whitelist und „Antworten ignorieren“.
 // @match        https://www.twitch.tv/*
 // @grant        none
@@ -378,7 +378,7 @@ IMPORTANT SETTINGS:
                     <div style="font-size:10px;color:#aaa">
                         <span id="tsf-counter-total">0</span> Nachrichten verarbeitet
                     </div>
-                    <div style="font-size:11px;opacity:0.9">v1.24</div>
+                    <div style="font-size:11px;opacity:0.9">v1.25</div>
                 </div>
             </div>
             <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">
@@ -997,15 +997,18 @@ IMPORTANT SETTINGS:
     function handleChatNode(msgNode) {
         const root = (msgNode.closest && (msgNode.closest('.chat-line__message-container') || msgNode.closest('[data-test-selector="chat-line"]') || msgNode.closest('.chat-line__message') || msgNode.closest('.chat-line__message-wrapper'))) || msgNode;
         // find user and message (best-effort)
-        const userEl = root.querySelector('.chat-author__display-name, .chat-line__username, [data-test-selector="chat-message-username"]') || root.querySelector('[data-a-user]') || null;
+        const userEl = root.querySelector(
+            '.chat-author__display-name, .chat-line__username, [data-test-selector="chat-message-username"], [data-a-target="chat-message-username"]'
+        ) || root.querySelector('[data-a-user], [data-user], [data-user-login], [data-login]') || null;
         const msgEl = getMessageContainer(root);
-        if (!userEl || !msgEl) return;
+        // Wichtig: Twitch aendert manchmal den Username-DOM. Bei gefundener Nachricht trotzdem weiter pruefen.
+        if (!msgEl) return;
 
         // replies ignore
         if (ignoreRepliesEnabled && isReplyMessage(root)) return;
 
         // privileged check -> mark yellow and skip
-        if (isPrivileged(root)) {
+        if (userEl && isPrivileged(root)) {
             // Nur im Debug gelb markieren (kein Styling im Chat)
             dbg.addLog(`Whitelist/Privileged: ${safeText(userEl)}`, true);
             return;
@@ -1091,7 +1094,7 @@ IMPORTANT SETTINGS:
      * Startup
      *********************/
     function startup() {
-        dbg.addLog('Starte Twitch Spam Filter v1.24...');
+        dbg.addLog('Starte Twitch Spam Filter v1.25...');
         observeChat();
     }
 
