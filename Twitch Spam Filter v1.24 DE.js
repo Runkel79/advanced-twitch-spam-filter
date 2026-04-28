@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Spam Filter DE
 // @namespace    https://github.com/Runkel79/advanced-twitch-spam-filter
-// @version      1.25
+// @version      1.27
 // @description  Erweiterter Twitch-Chat-Spamfilter mit Debug-Overlay, Whitelist und „Antworten ignorieren“.
 // @match        https://www.twitch.tv/*
 // @grant        none
@@ -292,6 +292,29 @@ IMPORTANT SETTINGS:
     const ENABLE_REPETITION_FILTER = true;
 
     /*
+     * ENABLE_PHRASE_REPEAT_FILTER = true
+     * - What it does: Detects one phrase repeated multiple times in a single message
+     * - Example: "CHAT NO TTS ... CHAT NO TTS ... CHAT NO TTS ..." is detected as spam
+     * - Recommended: true
+     */
+    const ENABLE_PHRASE_REPEAT_FILTER = true;
+
+    /*
+     * PHRASE_REPEAT_MIN_WORDS = 4
+     * - What it does: Minimum words per repeated phrase
+     * - Recommended: 3-6 (4 is balanced)
+     */
+    const PHRASE_REPEAT_MIN_WORDS = 4;
+
+    /*
+     * PHRASE_REPEAT_MIN_REPEATS = 3
+     * - What it does: Minimum number of repeated phrase blocks in one message
+     * - Example: phrase repeated 3x or more => spam
+     * - Recommended: 3-4
+     */
+    const PHRASE_REPEAT_MIN_REPEATS = 3;
+
+    /*
      * MAX_CHAR_REPETITION = 4
      * - What it does: Maximum number of same characters in a row
      * - Example: At 4: "AAAAA" (5x A) is detected as spam, "AAAA" (4x A) is OK
@@ -378,7 +401,7 @@ IMPORTANT SETTINGS:
                     <div style="font-size:10px;color:#aaa">
                         <span id="tsf-counter-total">0</span> Nachrichten verarbeitet
                     </div>
-                    <div style="font-size:11px;opacity:0.9">v1.25</div>
+                    <div style="font-size:11px;opacity:0.9">v1.27</div>
                 </div>
             </div>
             <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">
@@ -830,6 +853,45 @@ IMPORTANT SETTINGS:
         return maxRepetition > MAX_CHAR_REPETITION;
     }
 
+    // Detects exact repeated phrase blocks inside one message (A A A pattern)
+    function detectRepeatedPhraseSpam(text) {
+        if (!ENABLE_PHRASE_REPEAT_FILTER || !text) return null;
+        const normalizedText = text
+            .toLowerCase()
+            .replace(/[^\p{Letter}\p{Number}\s]/gu, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+        if (!normalizedText) return null;
+
+        const words = normalizedText.split(' ');
+        const minTotalWords = PHRASE_REPEAT_MIN_WORDS * PHRASE_REPEAT_MIN_REPEATS;
+        if (words.length < minTotalWords) return null;
+
+        const maxPhraseWords = Math.floor(words.length / PHRASE_REPEAT_MIN_REPEATS);
+        for (let phraseWords = PHRASE_REPEAT_MIN_WORDS; phraseWords <= maxPhraseWords; phraseWords++) {
+            const phrase = words.slice(0, phraseWords).join(' ');
+            if (!phrase) continue;
+
+            let repeats = 1;
+            let i = phraseWords;
+            while (i + phraseWords <= words.length) {
+                const chunk = words.slice(i, i + phraseWords).join(' ');
+                if (chunk !== phrase) break;
+                repeats++;
+                i += phraseWords;
+            }
+
+            // Allow a short tail so truncated end-words still match as spam
+            const tailWords = words.length - i;
+            const maxTailWords = Math.max(2, Math.floor(phraseWords * 0.35));
+            if (repeats >= PHRASE_REPEAT_MIN_REPEATS && tailWords <= maxTailWords) {
+                return { repeats, phraseWords, tailWords };
+            }
+        }
+
+        return null;
+    }
+
     function checkForSpamDetailed(user, text, emoteCount, emoteCodes) {
         const now = Date.now();
         if (!user) user = 'unknown';
@@ -867,7 +929,13 @@ IMPORTANT SETTINGS:
             return `Wiederholte Zeichen (Limit: <span style="color: #00ff00">${MAX_CHAR_REPETITION}</span>)`;
         }
 
-        // 2f) Braille/ASCII art detection
+        // 2f) Repeated phrase blocks in one message
+        const repeatedPhrase = detectRepeatedPhraseSpam(text);
+        if (repeatedPhrase) {
+            return `Wiederholte Phrasenblöcke (Limit: <span style="color: #00ff00">${PHRASE_REPEAT_MIN_REPEATS}</span> | Erreicht: <span style="color: #ff0000">${repeatedPhrase.repeats}</span>)`;
+        }
+
+        // 2g) Braille/ASCII art detection
         if (ENABLE_ART_SPAM_DETECTION) {
             const t = (text || '').replace(/\s+/g, ' ').trim();
             if (t.length >= ART_SPAM_MIN_LENGTH) {
@@ -1094,7 +1162,7 @@ IMPORTANT SETTINGS:
      * Startup
      *********************/
     function startup() {
-        dbg.addLog('Starte Twitch Spam Filter v1.25...');
+        dbg.addLog('Starte Twitch Spam Filter v1.27...');
         observeChat();
     }
 
