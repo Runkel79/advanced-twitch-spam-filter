@@ -15,8 +15,8 @@ An advanced spam filter for Twitch chats with debug overlay, whitelist, and "Ign
 
 ## Versions
 
-- **DE**: German version (`Twitch Spam Filter v1.27 DE.js`)
-- **EN**: English version (`Twitch Spam Filter v1.27 EN.js`)
+- **DE**: German version (`Twitch Spam Filter v1.28 DE.js`)
+- **EN**: English version (`Twitch Spam Filter v1.28 EN.js`)
 
 ## Features
 

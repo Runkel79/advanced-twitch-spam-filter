@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Twitch Spam Filter DE
 // @namespace    https://github.com/Runkel79/advanced-twitch-spam-filter
-// @version      1.27
+// @version      1.28
 // @description  Erweiterter Twitch-Chat-Spamfilter mit Debug-Overlay, Whitelist und „Antworten ignorieren“.
 // @match        https://www.twitch.tv/*
 // @grant        none
@@ -315,6 +315,22 @@ IMPORTANT SETTINGS:
     const PHRASE_REPEAT_MIN_REPEATS = 3;
 
     /*
+     * SHORT_PHRASE_WORDS = 2
+     * - What it does: Enables a stricter rule for very short repeated phrases
+     * - Example: "X Y X Y X Y ..." can still be detected as spam
+     * - Recommended: 2
+     */
+    const SHORT_PHRASE_WORDS = 2;
+
+    /*
+     * SHORT_PHRASE_MIN_REPEATS = 6
+     * - What it does: Required repeats when phrase length is only SHORT_PHRASE_WORDS
+     * - Example: Two-word phrases must repeat at least 6x
+     * - Recommended: 5-8 (6 is balanced)
+     */
+    const SHORT_PHRASE_MIN_REPEATS = 6;
+
+    /*
      * MAX_CHAR_REPETITION = 4
      * - What it does: Maximum number of same characters in a row
      * - Example: At 4: "AAAAA" (5x A) is detected as spam, "AAAA" (4x A) is OK
@@ -401,7 +417,7 @@ IMPORTANT SETTINGS:
                     <div style="font-size:10px;color:#aaa">
                         <span id="tsf-counter-total">0</span> Nachrichten verarbeitet
                     </div>
-                    <div style="font-size:11px;opacity:0.9">v1.27</div>
+                    <div style="font-size:11px;opacity:0.9">v1.28</div>
                 </div>
             </div>
             <div style="display:flex;gap:6px;margin-bottom:6px;flex-wrap:wrap">
@@ -864,11 +880,14 @@ IMPORTANT SETTINGS:
         if (!normalizedText) return null;
 
         const words = normalizedText.split(' ');
-        const minTotalWords = PHRASE_REPEAT_MIN_WORDS * PHRASE_REPEAT_MIN_REPEATS;
+        const minTotalWords = Math.min(
+            PHRASE_REPEAT_MIN_WORDS * PHRASE_REPEAT_MIN_REPEATS,
+            SHORT_PHRASE_WORDS * SHORT_PHRASE_MIN_REPEATS
+        );
         if (words.length < minTotalWords) return null;
 
-        const maxPhraseWords = Math.floor(words.length / PHRASE_REPEAT_MIN_REPEATS);
-        for (let phraseWords = PHRASE_REPEAT_MIN_WORDS; phraseWords <= maxPhraseWords; phraseWords++) {
+        const maxPhraseWords = Math.floor(words.length / Math.min(PHRASE_REPEAT_MIN_REPEATS, SHORT_PHRASE_MIN_REPEATS));
+        for (let phraseWords = SHORT_PHRASE_WORDS; phraseWords <= maxPhraseWords; phraseWords++) {
             const phrase = words.slice(0, phraseWords).join(' ');
             if (!phrase) continue;
 
@@ -884,7 +903,9 @@ IMPORTANT SETTINGS:
             // Allow a short tail so truncated end-words still match as spam
             const tailWords = words.length - i;
             const maxTailWords = Math.max(2, Math.floor(phraseWords * 0.35));
-            if (repeats >= PHRASE_REPEAT_MIN_REPEATS && tailWords <= maxTailWords) {
+            const normalRuleHit = phraseWords >= PHRASE_REPEAT_MIN_WORDS && repeats >= PHRASE_REPEAT_MIN_REPEATS;
+            const shortRuleHit = phraseWords === SHORT_PHRASE_WORDS && repeats >= SHORT_PHRASE_MIN_REPEATS;
+            if ((normalRuleHit || shortRuleHit) && tailWords <= maxTailWords) {
                 return { repeats, phraseWords, tailWords };
             }
         }
@@ -1162,7 +1183,7 @@ IMPORTANT SETTINGS:
      * Startup
      *********************/
     function startup() {
-        dbg.addLog('Starte Twitch Spam Filter v1.27...');
+        dbg.addLog('Starte Twitch Spam Filter v1.28...');
         observeChat();
     }
 
