@@ -1,6 +1,9 @@
-# Twitch Spam Filter (Should be fixed)
+# Twitch Spam Filter
 
-Looks like Twitch changed something, the script is currently not working.
+## ✅ Update Notice
+
+A new fix has been published.  
+The filter should now work more reliably again, especially for repeated phrase spam patterns.
 
 An advanced spam filter for Twitch chats with debug overlay, whitelist, and "Ignore Replies" functionality.
 
